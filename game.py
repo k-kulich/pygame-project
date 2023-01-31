@@ -82,7 +82,24 @@ def cut_sheet(sheet, columns, rows):
     return rect, frames
 
 
+def clear_groups():
+    """
+    Функция для 'очистки' групп спрайтов - удаления всех существующих (из групп и в принципе).
+    Для очистки поля перед загрузкой следующего уровня."""
+    for gr in {tiles_group, barriers_group, enemy_group, player_group, bullets_group}:
+        for sp in gr:
+            all_sprites.remove(sp)
+            gr.remove(sp)
+            sp.kill()
+
+
 def game():
+    """
+    Основной игровой цикл для уровня. Возможно в будущем изменить выбор уровня при генерации
+    через вызов сторонней функции.
+    """
+    clear_groups()
+    # TODO: заебенить отдельную функцию с циклом и гуишкой для выбора уровня
     player, *coords = generate_level(load_level('test_lvl.txt'))
     camera = Camera()
     while True:
@@ -92,8 +109,9 @@ def game():
                 terminate()
         mouse_pos = pygame.mouse.get_pos()
 
+        # при нажатии мыши пустить пулю
         if pygame.mouse.get_pressed()[0]:
-            Bullet('player', player.rect.centerx, player.rect.centery + tile_height, *mouse_pos)
+            Bullet('player', 5, player.rect.centerx, player.rect.centery + tile_height, *mouse_pos)
         bullets_group.update()
 
         # обработать нажатие клавиш
@@ -114,35 +132,70 @@ def game():
         # обновляем положение всех спрайтов
         for sprite in all_sprites:
             camera.apply(sprite)
+
+        # прорисовка всего, что только можно
         tiles_group.draw(screen)
         enemy_group.draw(screen)
         player_group.draw(screen)
         screen.blit(*to_blit)
         bullets_group.draw(screen)
+
         pygame.display.flip()
         clock.tick(FPS)
 
 
 class MySprite(pygame.sprite.Sprite):
+    """Базовый спрайт для создания игровых персонажей."""
     SPEED = 10
+    weapon = {'gun': load_image('gun_small1.png', (255, 255, 255))}
 
     def __init__(self, pos_x, pos_y, *groups):
         super().__init__(*groups)
         self.cur_frame = 0
+        self.hp = 15
+        self.cur_weapon = 0
+        self.direction = {'right': False, 'left': False, 'up': False, 'down': False}
+        self.hurt = False
         self.rect = pygame.Rect(tile_width * pos_x, tile_height * pos_y, tile_width, tile_height)
 
-    def get_hurt(self):
+    def handle_weapons(self):
+        """
+        Держать в руках изображение текущего оружия (от него зависит мощь пуль, да и просто для
+        удобства игрока нужно, чтобы оружие было видно)
+        """
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+
+        rel_x, rel_y = mouse_x - self.rect.centerx, mouse_y - (self.rect.centery + tile_height)
+        angle = math.degrees(-math.atan2(rel_y, rel_x))
+        img = self.weapon[self.cur_weapon]
+        if angle > 90 or angle < -90:
+            img = pygame.transform.flip(img, False, True)
+        weapon_copy = pygame.transform.rotate(img, angle)
+
+        return weapon_copy, (self.rect.centerx, self.rect.y + tile_height)
+
+    def animation(self):
+        pass
+
+    def get_hurt(self, damage):
         pass
 
 
 class Enemy(MySprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, enemy_group, all_sprites)
+        self.period = 60  # TODO: организовать случайный период для стрельбы
+        self.maximum = 150  # TODO: случайное максимальное удаление от игрока в пикселях
+
+    def move(self, player):
+        px, py = player.rect.centerx, player.rect.centery
+        ex, ey = self.rect.centerx, self.rect.centery
+        if (px - ex) ** 2 + (py - ey) ** 2 >= self.maximum ** 2:
+            # TODO: организовать смену направления движения
+            pass
 
 
 class Player(MySprite):
-    weapons = {'gun': load_image('gun_small1.png', (255, 255, 255))}
-
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, player_group, all_sprites)
         self.size = (tile_width, round(tile_height * 1.8))
@@ -150,19 +203,6 @@ class Player(MySprite):
         self.image = pygame.Surface(self.size)
         self.image.fill((204, 0, 0))
         self.current_weapon = 'gun'
-
-    def handle_weapons(self):
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-
-        rel_x, rel_y = mouse_x - self.rect.centerx, mouse_y - (self.rect.centery + tile_height)
-        angle = math.degrees(-math.atan2(rel_y, rel_x))
-        img = self.weapons[self.current_weapon]
-        if angle > 90 or angle < -90:
-            img = pygame.transform.flip(img, False, True)
-        player_weapon_copy = pygame.transform.rotate(img, angle)
-
-        return player_weapon_copy, (self.rect.centerx,
-                                    self.rect.y + tile_height)
 
     def update(self, new_pos, mouse_pos):
         if new_pos is None:
@@ -179,12 +219,14 @@ class Player(MySprite):
 
 
 class Bullet(pygame.sprite.Sprite):
+    """Пуля. Все ее характеристики, а также разница, выпущена ли игроком или в игрока."""
     SPEED = 15
     SIZE = (5, 5)
 
-    def __init__(self, owner, x, y, mouse_x, mouse_y):
+    def __init__(self, owner, damage, x, y, mouse_x, mouse_y):
         super().__init__(bullets_group, all_sprites)
         self.owner = owner
+        self.damage = damage
         self.angle = math.atan2(y - mouse_y, x - mouse_x)
         self.x_vel = math.cos(self.angle) * Bullet.SPEED
         self.y_vel = math.sin(self.angle) * Bullet.SPEED
@@ -198,14 +240,16 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.x -= int(self.x_vel)
         self.rect.y -= int(self.y_vel)
 
+        # при столкновении со стеной пуля исчезает
         if pygame.sprite.spritecollideany(self, barriers_group):
             bullets_group.remove(self)
             self.kill()
 
+        # если пуля выпущена игроком, то она не приносит ему урона, иначе наоборот
         gr = enemy_group if self.owner == 'player' else player_group
         c = 0
         for c, sp in enumerate(pygame.sprite.spritecollide(self, gr, dokill=False), 1):
-            sp.get_hurt()
+            sp.get_hurt(self.damage)
         if c > 0:
             bullets_group.remove(self)
             self.kill()
