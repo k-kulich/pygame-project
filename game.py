@@ -147,12 +147,15 @@ def game():
 class MySprite(pygame.sprite.Sprite):
     """Базовый спрайт для создания игровых персонажей."""
     SPEED = 10
+    PLAYER_WEAP = ['gun']
+    ENEMY_WEAP = ['gun']
     weapon = {'gun': load_image('gun_small1.png', (255, 255, 255))}
 
     def __init__(self, pos_x, pos_y, *groups):
         super().__init__(*groups)
         self.cur_frame = 0
         self.hp = 15
+        self.owned_weapon = ['gun']
         self.cur_weapon = 0
         self.direction = {'right': False, 'left': False, 'up': False, 'down': False}
         self.hurt = False
@@ -165,20 +168,36 @@ class MySprite(pygame.sprite.Sprite):
         """
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
-        rel_x, rel_y = mouse_x - self.rect.centerx, mouse_y - (self.rect.centery + tile_height)
+        flipped = False  #
+        # поворачиваем оружие под нужным углом
+        rel_x, rel_y = mouse_x - self.rect.x, mouse_y - self.rect.y
         angle = math.degrees(-math.atan2(rel_y, rel_x))
-        img = self.weapon[self.cur_weapon]
+        img = self.weapon[self.owned_weapon[self.cur_weapon]]
         if angle > 90 or angle < -90:
             img = pygame.transform.flip(img, False, True)
+            flipped = True
         weapon_copy = pygame.transform.rotate(img, angle)
 
-        return weapon_copy, (self.rect.centerx, self.rect.y + tile_height)
+        # настраиваем смещение картинки, чтобы она всегда была по центру игрока
+        angle = math.radians((360 + angle) % 360)
+        coords = (self.rect.centerx + img.get_width() * math.cos(angle) * int(flipped),
+                  self.rect.centery - img.get_height() * math.sin(angle))
+
+        return weapon_copy, coords
+
+    def get_weapon(self, weapon):
+        self.owned_weapon.append(weapon)
+
+    def next_weapon(self):
+        self.cur_weapon = (self.cur_weapon + 1) % len(self.owned_weapon)
 
     def animation(self):
         pass
 
     def get_hurt(self, damage):
-        pass
+        self.hp -= damage
+        # вернуть, жив ли персонаж
+        return True if self.hp > 0 else False
 
 
 class Enemy(MySprite):
