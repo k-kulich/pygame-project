@@ -137,7 +137,7 @@ def game():
         for sprite in all_sprites:
             camera.apply(sprite)
 
-        enemy_group.update(player.rect.center, mouse_pos)
+        enemy_group.update(player.rect.center)
 
         # прорисовка всего, что только можно
         tiles_group.draw(screen)
@@ -224,9 +224,19 @@ class Enemy(MySprite):
         self.rect = pygame.Rect(tile_width * (pos_x - 1), tile_height * pos_y,
                                 round(tile_width * 2.5), tile_height)
 
-    def shoot(self, player_center, mouse_pos):
-        if self.time_gone >= self.period:
-            pass
+    def get_hurt(self, damage):
+        self.hp -= damage
+        if self.hp < 1:
+            all_sprites.remove(self)
+            enemy_group.remove(self)
+            self.kill()
+
+    def shoot(self, player_center):
+        if self.time_gone < self.period - 5:
+            self.time_gone += 1
+            return
+        self.time_gone = 0
+        Bullet('enemy', 1, *self.rect.center, *player_center)
 
     def move(self, player_center):
 
@@ -257,7 +267,7 @@ class Enemy(MySprite):
 
         return self.rect.move(*coor_delta)
 
-    def update(self, player_center, mouse_pos):
+    def update(self, player_center):
         # смена направления движения
         new_pos = self.move(player_center)
         if new_pos is None:
@@ -271,12 +281,13 @@ class Enemy(MySprite):
             return self.handle_weapons()
         self.rect.y -= tile_height
         # стрелять по игроку
-        self.shoot(player_center, mouse_pos)
+        self.shoot(player_center)
 
 
 class Player(MySprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, player_group, all_sprites)
+        self.hp = 100
         self.size = (tile_width, round(tile_height * 1.8))
         self.delta_h = self.size[1] - tile_width
         self.image = pygame.Surface(self.size)
@@ -329,6 +340,8 @@ class Bullet(pygame.sprite.Sprite):
         c = 0
         for c, sp in enumerate(pygame.sprite.spritecollide(self, gr, dokill=False), 1):
             sp.get_hurt(self.damage)
+            if isinstance(sp, Player):
+                print(sp.hp)
         if c > 0:
             bullets_group.remove(self)
             self.kill()
