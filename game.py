@@ -2,7 +2,8 @@ import os
 import sys
 import pygame
 import math
-from pygame import K_DOWN, K_UP, K_LEFT, K_RIGHT
+import random
+from pygame import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_w, K_a, K_s, K_d
 
 
 pygame.init()
@@ -70,6 +71,9 @@ def generate_level(level):
             elif level[y][x] == '@':
                 Tile('floor', x, y)
                 new_player = Player(x, y)
+            elif level[y][x] == 'e':
+                Tile('floor', x, y)
+                Enemy(x, y)
     return new_player, x, y
 
 
@@ -111,19 +115,19 @@ def game():
 
         # при нажатии мыши пустить пулю
         if pygame.mouse.get_pressed()[0]:
-            Bullet('player', 5, player.rect.centerx, player.rect.centery + tile_height, *mouse_pos)
+            Bullet('player', 5, *player.weapon_end, *mouse_pos)
         bullets_group.update()
 
         # обработать нажатие клавиш
         keys = pygame.key.get_pressed()
         new_pos = None
-        if keys[K_UP]:
+        if keys[K_UP] or keys[K_w]:
             new_pos = player.rect.move(0, -MySprite.SPEED)
-        if keys[K_DOWN]:
+        if keys[K_DOWN] or keys[K_s]:
             new_pos = player.rect.move(0, MySprite.SPEED)
-        if keys[K_RIGHT]:
+        if keys[K_RIGHT] or keys[K_d]:
             new_pos = player.rect.move(MySprite.SPEED, 0)
-        if keys[K_LEFT]:
+        if keys[K_LEFT] or keys[K_a]:
             new_pos = player.rect.move(-MySprite.SPEED, 0)
         to_blit = player.update(new_pos, mouse_pos)
 
@@ -132,6 +136,8 @@ def game():
         # обновляем положение всех спрайтов
         for sprite in all_sprites:
             camera.apply(sprite)
+
+        enemy_group.update(player.rect.center, mouse_pos)
 
         # прорисовка всего, что только можно
         tiles_group.draw(screen)
@@ -159,6 +165,7 @@ class MySprite(pygame.sprite.Sprite):
         self.cur_weapon = 0
         self.direction = {'right': False, 'left': False, 'up': False, 'down': False}
         self.hurt = False
+        self.weapon_end = (0, 0)
         self.rect = pygame.Rect(tile_width * pos_x, tile_height * pos_y, tile_width, tile_height)
 
     def handle_weapons(self):
@@ -182,6 +189,9 @@ class MySprite(pygame.sprite.Sprite):
         angle = math.radians((360 + angle) % 360)
         coords = (self.rect.centerx + img.get_width() * math.cos(angle) * int(flipped),
                   self.rect.centery - img.get_height() * math.sin(angle))
+        self.weapon_end = (self.rect.centerx + img.get_width() * math.cos(angle),
+                           self.rect.centery - img.get_height() * math.sin(angle)
+                           + tile_height * int(angle > 3.14))
 
         return weapon_copy, coords
 
@@ -203,15 +213,65 @@ class MySprite(pygame.sprite.Sprite):
 class Enemy(MySprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, enemy_group, all_sprites)
-        self.period = 60  # TODO: организовать случайный период для стрельбы
-        self.maximum = 150  # TODO: случайное максимальное удаление от игрока в пикселях
+        self.size = (round(tile_width * 2.5), round(tile_height * 1.8))
+        self.period = random.randint(60, 240)
+        self.time_gone = 0  # отсчет текущего периода
+        self.maximum = random.randint(100, 200)
+        self.direction = random.sample('rlud', 2)
 
-    def move(self, player):
-        px, py = player.rect.centerx, player.rect.centery
-        ex, ey = self.rect.centerx, self.rect.centery
-        if (px - ex) ** 2 + (py - ey) ** 2 >= self.maximum ** 2:
-            # TODO: организовать смену направления движения
+        self.image = pygame.Surface(self.size)
+        self.image.fill((0, 51, 153))
+        self.rect = pygame.Rect(tile_width * (pos_x - 1), tile_height * pos_y,
+                                round(tile_width * 2.5), tile_height)
+
+    def shoot(self, player_center, mouse_pos):
+        if self.time_gone >= self.period:
             pass
+
+    def move(self, player_center):
+
+        # смена направления движения при необходимости
+        px, py = player_center
+        ex, ey = self.rect.centerx, self.rect.centery
+        ob = ''
+        if (px - ex) ** 2 + (py - ey) ** 2 >= self.maximum ** 2:
+            if (px - ex) ** 2 > (py - ey) ** 2:
+                ob = 'l' if px < ex else 'r'
+            else:
+                ob = 'u' if py < ey else 'd'
+        if ob and ob in 'lr':
+            self.direction = ob + random.choice('ud' + ob)
+        elif ob:
+            self.direction = ob + random.choice('lr' + ob)
+
+        # движение согласно текущему направлению
+        coor_delta = [0, 0]
+        if 'l' in self.direction:
+            coor_delta[0] -= self.SPEED
+        elif 'r' in self.direction:
+            coor_delta[0] += self.SPEED
+        if 'u' in self.direction:
+            coor_delta[1] -= self.SPEED
+        elif 'd' in self.direction:
+            coor_delta[1] += self.SPEED
+
+        return self.rect.move(*coor_delta)
+
+    def update(self, player_center, mouse_pos):
+        # смена направления движения
+        new_pos = self.move(player_center)
+        if new_pos is None:
+            return self.handle_weapons()
+        # проверка, занята ли новая позиция препятствием
+        new_pos.y += tile_height
+        last_pos = self.rect
+        self.rect = new_pos
+        if pygame.sprite.spritecollideany(self, barriers_group):
+            self.rect = last_pos
+            return self.handle_weapons()
+        self.rect.y -= tile_height
+        # стрелять по игроку
+        self.shoot(player_center, mouse_pos)
 
 
 class Player(MySprite):
