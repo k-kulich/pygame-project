@@ -1,5 +1,5 @@
 import pygame
-import button
+import button_d
 
 pygame.init()
 SCREEN_WIDTH = 800
@@ -12,11 +12,11 @@ game_paused = False
 
 font = pygame.font.SysFont("lucidaconsole", 45)
 
-resume_b = pygame.image.load("images/resume_b.png")
-quit_b = pygame.image.load("images/exit_b.png")
+resume_b = pygame.image.load("data/resume_b.png")
+quit_b = pygame.image.load("data/exit_b.png")
 
-resume_button = button.Button(220, 230, resume_b, 1)
-quit_button = button.Button(470, 230, quit_b, 1)
+resume_button = button_d.Button(220, 230, resume_b, 1)
+quit_button = button_d.Button(470, 230, quit_b, 1)
 
 
 def draw_text(text, font, text_col, x, y):
