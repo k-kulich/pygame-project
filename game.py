@@ -1,9 +1,9 @@
-import os
 import sys
 import pygame
 import math
 import random
 from pygame import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_w, K_a, K_s, K_d
+from data_loader import load_image, load_level
 
 
 pygame.init()
@@ -26,38 +26,6 @@ tile_width = tile_height = 40
 def terminate():
     pygame.quit()
     sys.exit()
-
-
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден", file=sys.stderr)
-        sys.exit()
-    image = pygame.image.load(fullname)
-
-    if colorkey is not None:
-        image = image.convert()
-        if colorkey == -1:
-            colorkey = image.get_at((0, 0))
-        image.set_colorkey(colorkey)
-    else:
-        image = image.convert_alpha()
-    return image
-
-
-def load_level(filename):
-    filename = "data/" + filename
-
-    try:
-        with open(filename, 'r') as mapFile:
-            level_map = [line.strip() for line in mapFile]
-    except Exception:
-        print(f"Файл '{filename}' не найден", file=sys.stderr)
-        terminate()
-
-    max_width = max(map(len, level_map))
-    # дополнить строку слева символами 'n'
-    return list(map(lambda x: x.ljust(max_width, 'n'), level_map))
 
 
 def generate_level(level):
@@ -225,6 +193,10 @@ class Enemy(MySprite):
                                 round(tile_width * 2.5), tile_height)
 
     def get_hurt(self, damage):
+        """
+        Получить урон. В случае, если здоровье заканчивается, объект удаляется.
+        :param damage: наносимый урон.
+        """
         self.hp -= damage
         if self.hp < 1:
             all_sprites.remove(self)
@@ -239,7 +211,11 @@ class Enemy(MySprite):
         Bullet('enemy', 1, *self.rect.center, *player_center)
 
     def move(self, player_center):
-
+        """
+        Сама функция выбора новой позиции в зависимости от того, как далеко игрок.
+        :param player_center: центр игрока.
+        :return: rect с новой позицией.
+        """
         # смена направления движения при необходимости
         px, py = player_center
         ex, ey = self.rect.centerx, self.rect.centery
@@ -268,6 +244,10 @@ class Enemy(MySprite):
         return self.rect.move(*coor_delta)
 
     def update(self, player_center):
+        """
+        Обновление положения в зависимости от положения игрока.
+        :param player_center: центр спрайта игрока.
+        """
         # смена направления движения
         new_pos = self.move(player_center)
         if new_pos is None:
@@ -285,6 +265,9 @@ class Enemy(MySprite):
 
 
 class Player(MySprite):
+    """
+    Игрок. Просто особый вид спрайта.
+    """
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, player_group, all_sprites)
         self.hp = 100
