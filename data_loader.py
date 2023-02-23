@@ -1,3 +1,4 @@
+"""Функции, подгружающие данные из внешних файлов."""
 import os
 import sys
 import pygame
@@ -12,6 +13,7 @@ def terminate():
 
 
 def load_level(filename):
+    """Функция для загрузки уровня из текстового файла."""
     filename = "data/" + filename
 
     try:
@@ -27,6 +29,7 @@ def load_level(filename):
 
 
 def load_image(name, colorkey=None):
+    """Функция для загрузки и преобразования изображения."""
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден", file=sys.stderr)
