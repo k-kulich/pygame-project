@@ -3,7 +3,7 @@ import pygame
 import random
 from data_loader import load_image
 from constants import tile_height, tile_width, WIDTH, HEIGHT
-from constants import tiles_group, all_sprites, barriers_group
+from constants import tiles_group, all_sprites, barriers_group, portal_group
 
 
 pygame.init()
@@ -22,24 +22,31 @@ class Tile(pygame.sprite.Sprite):
                   'ltable': load_image('table_l.png'),
                   'mtable': load_image('table_m.png'),
                   'rtable': load_image('table_r.png'),
-                  'chairs': [load_image('chair.png'), load_image('chair2.png')]}
+                  'chairs': [load_image('chair.png'), load_image('chair2.png')],
+                  'portal': pygame.Color(38, 75, 115)}
 
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_group, all_sprites)
         self.type = tile_type
+        self.hp = 0
         self.image = self.trans_image()
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        if tile_type == 'portal':
+            portal_group.add(self)
         if tile_type != 'floor':
             barriers_group.add(self)
 
     def trans_image(self):
         """Преобразовать изображение: развернуть столы и т.п. и вернуть итог."""
         if self.type == 'chairs':
+            self.hp = 75
             return random.choice(self.tile_types[self.type])
         if self.type[0] not in {'l', 'm', 'r'}:
+            self.hp = float('inf')
             img = pygame.Surface((tile_width, tile_height))
             img.fill(self.tile_types[self.type])
             return img
+        self.hp = 150
         if 'table' in self.type:
             return self.tile_types[self.type]
         img = pygame.transform.rotate(self.tile_types[self.type[0] + 'table'], 90)
@@ -49,6 +56,13 @@ class Tile(pygame.sprite.Sprite):
 
     def tile_type(self):
         return self.type
+
+    def hit(self, damage):
+        """Удар по препятствию. Стенам насрать, а стулья и столы могут поломаться."""
+        self.hp -= damage
+        if self.hp < 1:
+            barriers_group.remove(self)
+            self.kill()
 
 
 class Camera:

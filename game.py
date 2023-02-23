@@ -2,13 +2,15 @@
 # 1000 и 1 импорт
 import sys
 import pygame
-from pygame import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_w, K_a, K_s, K_d
+from pygame import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_w, K_a, K_s, K_d, K_e
+from pygame import KEYDOWN
 from data_loader import load_level
 from my_sprites import Player, Enemy, MySprite
 from bullet import Bullet
 from tiles_camera import Tile, Camera
-from constants import SIZE, FPS, barriers_group, player_group, enemy_group, all_sprites
-from constants import bullets_group, tiles_group
+from constants import SIZE, FPS, FRAME_H, BACK_HP, HP_H, HP_COLOR
+from constants import barriers_group, player_group, enemy_group, all_sprites, bullets_group
+from constants import tiles_group
 
 
 pygame.init()
@@ -50,6 +52,8 @@ def generate_level(level):
                 Tile('floor', x, y)
             elif cell == 'w':
                 Tile('wall', x, y)
+            elif cell == 'p':
+                Tile('portal', x, y)
             elif cell == '@':
                 Tile('floor', x, y)
                 new_player = Player(x, y)
@@ -75,6 +79,18 @@ def clear_groups():
             all_sprites.remove(sp)
             gr.remove(sp)
             sp.kill()
+
+
+def draw_hp_lines(player):
+    """Показывает текущий уровень здоровья у игрока и злодеев."""
+    pygame.draw.rect(screen, BACK_HP, pygame.Rect(10, 10, 204, FRAME_H))
+    pygame.draw.rect(screen, HP_COLOR, pygame.Rect(12, 12, 200 * player.get_percent_hp(), HP_H))
+    for enemy in enemy_group.sprites():
+        pos = enemy.rect.left, enemy.rect.top - 5 - FRAME_H // 2
+        pygame.draw.rect(screen, BACK_HP, pygame.Rect(*pos, enemy.rect.width, FRAME_H // 2))
+        pygame.draw.rect(screen, HP_COLOR,
+                         pygame.Rect(pos[0] + 1, pos[1] + 1,
+                                     (enemy.rect.width - 2) * enemy.get_percent_hp(), HP_H // 2))
 
 
 def update_sprites(player, camera):
@@ -124,13 +140,24 @@ def level_cycle():
     # TODO: заебенить отдельную функцию с циклом и гуишкой для выбора уровня
     player, *coords = generate_level(load_level('test_lvl.txt'))
     camera = Camera()
+    stop = False
     while True:
         screen.fill('black')
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-        # обновление всего в игре вынесено в отдельную функцию
-        update_sprites(player, camera)
+            if event.type == KEYDOWN:
+                if event.key == K_e:
+                    # если игрок нашел выход, то уровень заканчивается
+                    if player.door_found:
+                        stop = True
+        # пока игрок не нашел выход из уровня
+        if not stop:
+            # обновление всего в игре вынесено в отдельную функцию
+            update_sprites(player, camera)
+            draw_hp_lines(player)
+            # если игрок умер, то игра останавливается
+            stop = not player.is_alive
 
         pygame.display.flip()
         clock.tick(FPS)

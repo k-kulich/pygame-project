@@ -29,8 +29,12 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.x -= int(self.x_vel)
         self.rect.y -= int(self.y_vel)
 
+        remove = False
         # при столкновении со стеной пуля исчезает
-        if pygame.sprite.spritecollideany(self, barriers_group):
+        for sp in pygame.sprite.spritecollide(self, barriers_group, dokill=False):
+            sp.hit(self.damage)
+            remove = True
+        if remove:
             bullets_group.remove(self)
             self.kill()
 
@@ -42,6 +46,7 @@ class Bullet(pygame.sprite.Sprite):
         if c > 0:
             bullets_group.remove(self)
             self.kill()
+
 
 if __name__ == '__main__':
     pygame.quit()
