@@ -17,7 +17,7 @@ def load_level(filename):
     filename = "data/" + filename
 
     try:
-        with open(filename, 'r') as mapFile:
+        with open(filename, 'r', encoding='utf-8') as mapFile:
             level_map = [line.strip() for line in mapFile]
     except Exception:
         print(f"Файл '{filename}' не найден", file=sys.stderr)

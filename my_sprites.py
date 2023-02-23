@@ -11,6 +11,8 @@ from bullet import Bullet
 pygame.init()
 pygame.display.set_mode((WIDTH, HEIGHT))
 
+ENEMIES = tuple(load_image(x + '.png') for x in {'SE', 'NE', 'IE', 'TE', 'pep8'})
+
 
 class MySprite(pygame.sprite.Sprite):
     """Базовый спрайт для создания игровых персонажей."""
@@ -25,7 +27,7 @@ class MySprite(pygame.sprite.Sprite):
         self.hp = 15
         self.owned_weapon = ['gun']
         self.cur_weapon = 0
-        self.direction = {'right': False, 'left': False, 'up': False, 'down': False}
+        self.direction = ''
         self.hurt = False
         self.weapon_end = (0, 0)
         self.rect = pygame.Rect(tile_width * pos_x, tile_height * pos_y, tile_width, tile_height)
@@ -57,6 +59,10 @@ class MySprite(pygame.sprite.Sprite):
 
         return weapon_copy, coords
 
+    def flip_image(self):
+        """Перевернуть изображение при смене направления ходьбы."""
+        self.image = pygame.transform.flip(self.image, True, False)
+
     def get_weapon(self, weapon):
         self.owned_weapon.append(weapon)
 
@@ -75,16 +81,14 @@ class MySprite(pygame.sprite.Sprite):
 class Enemy(MySprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, enemy_group, all_sprites)
-        self.size = (round(tile_width * 2.5), round(tile_height * 1.8))
+        self.size = (round(tile_width * 2.5), tile_height)
         self.period = random.randint(60, 150)
         self.time_gone = 0  # отсчет текущего периода
         self.maximum = random.randint(100, 200)
         self.direction = random.sample('rlud', 2)
 
-        self.image = pygame.Surface(self.size)
-        self.image.fill((0, 51, 153))
-        self.rect = pygame.Rect(tile_width * (pos_x - 1), tile_height * pos_y,
-                                round(tile_width * 2.5), tile_height)
+        self.image = random.choice(ENEMIES)
+        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
     def get_hurt(self, damage):
         """
@@ -117,6 +121,7 @@ class Enemy(MySprite):
         if (px - ex) ** 2 + (py - ey) ** 2 >= self.maximum ** 2:
             if (px - ex) ** 2 > (py - ey) ** 2:
                 ob = 'l' if px < ex else 'r'
+                self.flip_image()
             else:
                 ob = 'u' if py < ey else 'd'
         if ob and ob in 'lr':
@@ -147,13 +152,13 @@ class Enemy(MySprite):
         if new_pos is None:
             return self.handle_weapons()
         # проверка, занята ли новая позиция препятствием
-        new_pos.y += tile_height
+
         last_pos = self.rect
         self.rect = new_pos
         if pygame.sprite.spritecollideany(self, barriers_group):
             self.rect = last_pos
             return self.handle_weapons()
-        self.rect.y -= tile_height
+
         # стрелять по игроку
         self.shoot(player_center)
 
@@ -162,28 +167,42 @@ class Player(MySprite):
     """
     Игрок. Просто особый вид спрайта.
     """
+    pics = {'stop': load_image('pers1.png'),
+            'walk': (load_image('pers2.png'), load_image('pers3.png'))}
+
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, player_group, all_sprites)
         self.hp = 100
-        self.size = (tile_width, round(tile_height * 1.8))
+        self.size = (tile_width, tile_height)
         self.delta_h = self.size[1] - tile_width
-        self.image = pygame.Surface(self.size)
-        self.image.fill((204, 0, 0))
+        self.image = Player.pics['stop']
         self.current_weapon = 'gun'
+        self.img_index = 0
 
     def update(self, new_pos, mouse_pos):
         if new_pos is None:
+            self.image = Player.pics['stop']
+            if self.direction == 'l':
+                self.flip_image()
             return self.handle_weapons()
         # проверка, занята ли новая позиция препятствием
-        new_pos.y += tile_height
+
         last_pos = self.rect
         self.rect = new_pos
         if pygame.sprite.spritecollideany(self, barriers_group):
             self.rect = last_pos
             return self.handle_weapons()
-        self.rect.y -= tile_height
-        return self.handle_weapons()
 
+        # преобразование изображения игрока
+        self.image = Player.pics['walk'][self.img_index]
+        self.img_index = (self.img_index + 1) % 2
+        if last_pos.x > self.rect.x and self.direction == 'r':
+            self.direction = 'l'
+            self.flip_image()
+        elif last_pos.x < self.rect.x and self.direction == 'l':
+            self.direction = 'r'
+            self.flip_image()
+        return self.handle_weapons()
 
 
 if __name__ == '__main__':

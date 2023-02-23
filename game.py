@@ -22,35 +22,47 @@ def terminate():
     sys.exit()
 
 
+def create_table(tp, x, y):
+    """Создать стол нужного типа. Вынесено, чтобы не засорять основную функцию."""
+    table = ''
+    if tp in {'⌈', '⊔', '∪'}:
+        table += 'l'
+    elif tp in {'-', '∃', 'E'}:
+        table += 'm'
+    elif tp in {'⌉', '⊓', '∩'}:
+        table += 'r'
+    if tp in {'t', '⌈', '-', '⌉'}:
+        table += 'table'
+    elif tp in '⊓∃⊔':
+        table += 'r'
+    else:
+        table += 'l'
+    Tile(table, x, y)
+
+
 def generate_level(level):
-    """Генерируем уровень. Используются следующие обозначения:
-    . - просто placeholder, на его месте не создается тайла;
-    e - клетка поля, на которой генерируется тайл пола и враг на нем;
-    @ - клетка поля с игроком;
-    w - тайл стены."""
+    """Генерируем уровень. Обозначения прописаны в отдельном файле."""
     new_player, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
-            if level[y][x] == '.':
+            cell = level[y][x]
+            if cell == '.':
                 Tile('floor', x, y)
-            elif level[y][x] == 'w':
+            elif cell == 'w':
                 Tile('wall', x, y)
-            elif level[y][x] == '@':
+            elif cell == '@':
                 Tile('floor', x, y)
                 new_player = Player(x, y)
-            elif level[y][x] == 'e':
+            elif cell == 'e':
                 Tile('floor', x, y)
                 Enemy(x, y)
+            elif cell in {'t', '⌈', '-', '⌉', '⊓', '∃', '⊔', '∩', 'E', '∪'}:
+                Tile('floor', x, y)
+                create_table(cell, x, y)
+            elif cell == 'c':
+                Tile('floor', x, y)
+                Tile('chairs', x, y)
     return new_player, x, y
-
-
-def cut_sheet(sheet, columns, rows):
-    frames = []
-    rect = pygame.Rect(0, 0, sheet.get_width() // columns, sheet.get_height() // rows)
-    for j in range(rows):
-        for i in range(columns):
-            frames.append(sheet.subsurface(pygame.Rect((rect.w * i, rect.h * j), rect.size)))
-    return rect, frames
 
 
 def clear_groups():
@@ -103,7 +115,7 @@ def update_sprites(player, camera):
     bullets_group.draw(screen)
 
 
-def game():
+def level_cycle():
     """
     Основной игровой цикл для уровня. Возможно в будущем изменить выбор уровня при генерации
     через вызов сторонней функции.
@@ -125,4 +137,4 @@ def game():
 
 
 if __name__ == '__main__':
-    game()
+    level_cycle()
