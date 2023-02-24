@@ -49,7 +49,7 @@ def main_menu():
                 progress.set_value(progress.get_value() + 1)
                 if progress.get_value() == 100:
                     pygame.time.set_timer(update_loading, 0)
-                    level_cycle(level_to_load)
+                    level_cycle(level_to_load + 1)
             if event.type == pygame.QUIT:
                 terminate()
 
