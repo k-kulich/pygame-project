@@ -20,9 +20,9 @@ class MySprite(pygame.sprite.Sprite):
     PLAYER_WEAP = ['gun']
     ENEMY_WEAP = ['gun']
     weapon = {'gun': load_image('gun_small1.png', (255, 255, 255))}
-    difficulty = {'light': 15, 'normal': 50, 'hard': 150, 'very hard': 250,
+    difficulty = {'light': 50, 'normal': 150, 'hard': 250,
                   'little boss': 500, 'boss': 1000, 'last boss': 5000,
-                  'player': 100}
+                  'player': 200}
 
     def __init__(self, pos_x, pos_y, difficult, *groups):
         super().__init__(*groups)
@@ -93,7 +93,7 @@ class Enemy(MySprite):
 
         self.maximum = random.randint(100, 200)
         self.direction = random.sample('rlud', 2)
-        self.speed = random.randint(5, MySprite.SPEED + 5)
+        self.speed = random.randint(5, MySprite.SPEED)
 
         self.image = random.choice(ENEMIES)
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)

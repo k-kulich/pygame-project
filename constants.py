@@ -12,6 +12,8 @@ HP_COLOR = pygame.Color(179, 0, 0, 70)
 FRAME_H = 24
 HP_H = 20
 
+DIFF = {1: 'light', 2: 'normal', 3: 'normal', 4: 'hard', 5: 'hard', 6: 'little boss'}
+
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 barriers_group = pygame.sprite.Group()

@@ -2,16 +2,17 @@
 # 1000 и 1 импорт
 import sys
 import pygame
-from pygame import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_w, K_a, K_s, K_d, K_e
+from pygame import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_w, K_a, K_s, K_d, K_e, K_SPACE
 from pygame import KEYDOWN
 from data_loader import load_level
 from my_sprites import Player, Enemy, MySprite
 from bullet import Bullet
 from tiles_camera import Tile, Camera
-from constants import SIZE, FPS, FRAME_H, BACK_HP, HP_H, HP_COLOR
+from constants import SIZE, FPS, FRAME_H, BACK_HP, HP_H, HP_COLOR, DIFF
 from constants import barriers_group, player_group, enemy_group, all_sprites, bullets_group
 from constants import tiles_group
-
+from button_main import show_menu
+import mainmenu
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
@@ -42,7 +43,7 @@ def create_table(tp, x, y):
     Tile(table, x, y)
 
 
-def generate_level(level):
+def generate_level(level, difficulty):
     """Генерируем уровень. Обозначения прописаны в отдельном файле."""
     new_player, x, y = None, None, None
     for y in range(len(level)):
@@ -59,7 +60,7 @@ def generate_level(level):
                 new_player = Player(x, y)
             elif cell == 'e':
                 Tile('floor', x, y)
-                Enemy(x, y)
+                Enemy(x, y, DIFF[difficulty])
             elif cell in {'t', '⌈', '-', '⌉', '⊓', '∃', '⊔', '∩', 'E', '∪'}:
                 Tile('floor', x, y)
                 create_table(cell, x, y)
@@ -131,22 +132,29 @@ def update_sprites(player, camera):
     bullets_group.draw(screen)
 
 
-def level_cycle():
+def level_cycle(level):
     """
     Основной игровой цикл для уровня. Возможно в будущем изменить выбор уровня при генерации
     через вызов сторонней функции.
     """
     clear_groups()
-    # TODO: заебенить отдельную функцию с циклом и гуишкой для выбора уровня
-    player, *coords = generate_level(load_level('test_lvl.txt'))
+
+    player, *coords = generate_level(load_level(f'lvl_{level}.txt'), level)
     camera = Camera()
+    pygame.display.set_caption("Main Menu")
+
     stop = False
-    while True:
+    running = True
+    while running:
         screen.fill('black')
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             if event.type == KEYDOWN:
+                if event.key == K_SPACE:
+                    # Меню в середине игры
+                    running, stop = show_menu()
+
                 if event.key == K_e:
                     # если игрок нашел выход, то уровень заканчивается
                     if player.door_found:
@@ -158,10 +166,12 @@ def level_cycle():
             draw_hp_lines(player)
             # если игрок умер, то игра останавливается
             stop = not player.is_alive
+        else:
+            mainmenu.main_menu()
 
         pygame.display.flip()
         clock.tick(FPS)
 
 
 if __name__ == '__main__':
-    level_cycle()
+    mainmenu.main_menu()
