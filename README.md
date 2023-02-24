@@ -1,1 +1,1 @@
-# Типа Soul Knight
+# pygame-project

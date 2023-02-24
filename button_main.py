@@ -1,47 +1,38 @@
 import pygame
 import button_d
 
-pygame.init()
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Main Menu")
+def show_menu():
+    SCREEN_WIDTH = 800
+    SCREEN_HEIGHT = 600
 
-game_paused = False
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Main Menu")
 
-font = pygame.font.SysFont("lucidaconsole", 45)
+    resume_b = pygame.image.load("images/resume_b.png")
+    quit_b = pygame.image.load("images/exit_b.png")
 
-resume_b = pygame.image.load("data/resume_b.png")
-quit_b = pygame.image.load("data/exit_b.png")
+    resume_button = button_d.Button(220, 230, resume_b, 1)
+    quit_button = button_d.Button(470, 230, quit_b, 1)
 
-resume_button = button_d.Button(220, 230, resume_b, 1)
-quit_button = button_d.Button(470, 230, quit_b, 1)
-
-
-def draw_text(text, font, text_col, x, y):
-    img = font.render(text, True, text_col)
-    screen.blit(img, (x, y))
-
-
-run = True
-while run:
-    screen.fill(pygame.Color("BurlyWood"))
-    if game_paused is True:
+    run = True
+    while run:
+        screen.fill(pygame.Color("BurlyWood"))
         if resume_button.draw(screen):
-            game_paused = False
+            print("Переход на уровень")
         if quit_button.draw(screen):
-            run = False
-    else:
-        draw_text("Press SPACE to pause", font, "white", 130, 270)
-
-    for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                game_paused = True
-        if event.type == pygame.QUIT:
+            print("Выход из игры")
             run = False
 
-    pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                print("Выход из игры")
 
-pygame.quit()
+        pygame.display.update()
+
+    pygame.quit()
+
+
+if __name__ == '__main__':
+    show_menu()

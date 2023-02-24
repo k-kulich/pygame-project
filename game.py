@@ -2,7 +2,7 @@
 # 1000 и 1 импорт
 import sys
 import pygame
-from pygame import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_w, K_a, K_s, K_d, K_e
+from pygame import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_w, K_a, K_s, K_d, K_e, K_SPACE
 from pygame import KEYDOWN
 from data_loader import load_level
 from my_sprites import Player, Enemy, MySprite
@@ -11,7 +11,8 @@ from tiles_camera import Tile, Camera
 from constants import SIZE, FPS, FRAME_H, BACK_HP, HP_H, HP_COLOR
 from constants import barriers_group, player_group, enemy_group, all_sprites, bullets_group
 from constants import tiles_group
-
+from button_main import show_menu
+import mainmenu
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
@@ -140,6 +141,8 @@ def level_cycle():
     # TODO: заебенить отдельную функцию с циклом и гуишкой для выбора уровня
     player, *coords = generate_level(load_level('test_lvl.txt'))
     camera = Camera()
+    pygame.display.set_caption("Main Menu")
+
     stop = False
     while True:
         screen.fill('black')
@@ -147,9 +150,16 @@ def level_cycle():
             if event.type == pygame.QUIT:
                 terminate()
             if event.type == KEYDOWN:
+                if event.key == K_SPACE:
+                    """
+                    Меню в середине игры
+                    """
+                    show_menu()
+
                 if event.key == K_e:
                     # если игрок нашел выход, то уровень заканчивается
                     if player.door_found:
+                        mainmenu.main_menu()
                         stop = True
         # пока игрок не нашел выход из уровня
         if not stop:
@@ -164,4 +174,4 @@ def level_cycle():
 
 
 if __name__ == '__main__':
-    level_cycle()
+    mainmenu.main_menu()
