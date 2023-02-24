@@ -43,7 +43,7 @@ def create_table(tp, x, y):
     Tile(table, x, y)
 
 
-def generate_level(level):
+def generate_level(level, difficulty):
     """Генерируем уровень. Обозначения прописаны в отдельном файле."""
     new_player, x, y = None, None, None
     for y in range(len(level)):
@@ -60,7 +60,7 @@ def generate_level(level):
                 new_player = Player(x, y)
             elif cell == 'e':
                 Tile('floor', x, y)
-                Enemy(x, y)
+                Enemy(x, y, difficulty)
             elif cell in {'t', '⌈', '-', '⌉', '⊓', '∃', '⊔', '∩', 'E', '∪'}:
                 Tile('floor', x, y)
                 create_table(cell, x, y)
@@ -132,14 +132,14 @@ def update_sprites(player, camera):
     bullets_group.draw(screen)
 
 
-def level_cycle():
+def level_cycle(level):
     """
     Основной игровой цикл для уровня. Возможно в будущем изменить выбор уровня при генерации
     через вызов сторонней функции.
     """
     clear_groups()
-    # TODO: заебенить отдельную функцию с циклом и гуишкой для выбора уровня
-    player, *coords = generate_level(load_level('test_lvl.txt'))
+
+    player, *coords = generate_level(load_level(f'lvl_{level + 1}.txt'), level)
     camera = Camera()
     pygame.display.set_caption("Main Menu")
 

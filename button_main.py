@@ -1,5 +1,6 @@
 import pygame
-import button_d
+from button_d import Button
+from data_loader import load_image
 
 
 def show_menu():
@@ -9,11 +10,11 @@ def show_menu():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Main Menu")
 
-    resume_b = pygame.image.load("images/resume_b.png")
-    quit_b = pygame.image.load("images/exit_b.png")
+    resume_b = load_image('resume_b.png')
+    quit_b = load_image('exit_b.png')
 
-    resume_button = button_d.Button(220, 230, resume_b, 1)
-    quit_button = button_d.Button(470, 230, quit_b, 1)
+    resume_button = Button(220, 230, resume_b, 1)
+    quit_button = Button(470, 230, quit_b, 1)
 
     run = True
     while run:

@@ -20,7 +20,7 @@ class MySprite(pygame.sprite.Sprite):
     PLAYER_WEAP = ['gun']
     ENEMY_WEAP = ['gun']
     weapon = {'gun': load_image('gun_small1.png', (255, 255, 255))}
-    difficulty = {'light': 15, 'normal': 50, 'hard': 150, 'very hard': 250,
+    difficulty = {'light': 50, 'normal': 150, 'hard': 250,
                   'little boss': 500, 'boss': 1000, 'last boss': 5000,
                   'player': 100}
 
