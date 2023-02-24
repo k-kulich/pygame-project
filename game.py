@@ -8,7 +8,7 @@ from data_loader import load_level
 from my_sprites import Player, Enemy, MySprite
 from bullet import Bullet
 from tiles_camera import Tile, Camera
-from constants import SIZE, FPS, FRAME_H, BACK_HP, HP_H, HP_COLOR
+from constants import SIZE, FPS, FRAME_H, BACK_HP, HP_H, HP_COLOR, DIFF
 from constants import barriers_group, player_group, enemy_group, all_sprites, bullets_group
 from constants import tiles_group
 from button_main import show_menu
@@ -60,7 +60,7 @@ def generate_level(level, difficulty):
                 new_player = Player(x, y)
             elif cell == 'e':
                 Tile('floor', x, y)
-                Enemy(x, y, difficulty)
+                Enemy(x, y, DIFF[difficulty])
             elif cell in {'t', '⌈', '-', '⌉', '⊓', '∃', '⊔', '∩', 'E', '∪'}:
                 Tile('floor', x, y)
                 create_table(cell, x, y)
@@ -139,27 +139,25 @@ def level_cycle(level):
     """
     clear_groups()
 
-    player, *coords = generate_level(load_level(f'lvl_{level + 1}.txt'), level)
+    player, *coords = generate_level(load_level(f'lvl_{level}.txt'), level)
     camera = Camera()
     pygame.display.set_caption("Main Menu")
 
     stop = False
-    while True:
+    running = True
+    while running:
         screen.fill('black')
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             if event.type == KEYDOWN:
                 if event.key == K_SPACE:
-                    """
-                    Меню в середине игры
-                    """
-                    show_menu()
+                    # Меню в середине игры
+                    running, stop = show_menu()
 
                 if event.key == K_e:
                     # если игрок нашел выход, то уровень заканчивается
                     if player.door_found:
-                        mainmenu.main_menu()
                         stop = True
         # пока игрок не нашел выход из уровня
         if not stop:
@@ -168,6 +166,8 @@ def level_cycle(level):
             draw_hp_lines(player)
             # если игрок умер, то игра останавливается
             stop = not player.is_alive
+        else:
+            mainmenu.main_menu()
 
         pygame.display.flip()
         clock.tick(FPS)

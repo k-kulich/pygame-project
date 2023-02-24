@@ -22,6 +22,7 @@ def main_menu():
 
     def set_difficulty(value, difficulty):
         global level_to_load
+        print(difficulty)
         level_to_load = difficulty
 
     menu = pygame_menu.Menu('Welcome', WIDTH, HEIGHT, theme=themes.THEME_SOLARIZED)
