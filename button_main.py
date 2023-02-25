@@ -20,9 +20,9 @@ def show_menu():
     while run:
         screen.fill(pygame.Color("BurlyWood"))
         if resume_button.draw(screen):
-            return True, True
+            return True, False
         if quit_button.draw(screen):
-            return False, False
+            exit()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
