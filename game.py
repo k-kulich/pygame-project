@@ -141,7 +141,7 @@ def level_cycle(level):
 
     player, *coords = generate_level(load_level(f'lvl_{level}.txt'), level)
     camera = Camera()
-    pygame.display.set_caption("Main Menu")
+    pygame.display.set_caption(f"level {level}")
 
     stop = False
     running = True

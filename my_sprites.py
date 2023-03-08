@@ -17,9 +17,10 @@ ENEMIES = tuple(load_image(x + '.png') for x in {'SE', 'NE', 'IE', 'TE', 'pep8'}
 class MySprite(pygame.sprite.Sprite):
     """Базовый спрайт для создания игровых персонажей."""
     SPEED = 10
-    PLAYER_WEAP = ['gun']
-    ENEMY_WEAP = ['gun']
-    weapon = {'gun': load_image('gun_small1.png', (255, 255, 255))}
+    PLAYER_WEAP = ['guitar']
+    ENEMY_WEAP = ['guitar']
+    weapon = {'guitar': load_image('guitar.png', (255, 255, 255))}
+    # заготовка для уровней сложности - кол-во hp
     difficulty = {'light': 50, 'normal': 150, 'hard': 250,
                   'little boss': 500, 'boss': 1000, 'last boss': 5000,
                   'player': 200}
@@ -28,7 +29,7 @@ class MySprite(pygame.sprite.Sprite):
         super().__init__(*groups)
         self.diff = difficult
         self.hp = MySprite.difficulty[difficult]
-        self.owned_weapon = ['gun']
+        self.owned_weapon = ['guitar']
         self.cur_weapon = 0
         self.direction = ''
         self.is_alive = True
@@ -42,7 +43,7 @@ class MySprite(pygame.sprite.Sprite):
         """
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
-        flipped = False  #
+        flipped = False
         # поворачиваем оружие под нужным углом
         rel_x, rel_y = mouse_x - self.rect.x, mouse_y - self.rect.y
         angle = math.degrees(-math.atan2(rel_y, rel_x))
@@ -55,10 +56,10 @@ class MySprite(pygame.sprite.Sprite):
         # настраиваем смещение картинки, чтобы она всегда была по центру игрока
         angle = math.radians((360 + angle) % 360)
         coords = (self.rect.centerx + img.get_width() * math.cos(angle) * int(flipped),
-                  self.rect.centery - img.get_height() * math.sin(angle))
+                  self.rect.y - img.get_height() * math.sin(angle))
         self.weapon_end = (self.rect.centerx + img.get_width() * math.cos(angle),
-                           self.rect.centery - img.get_height() * math.sin(angle)
-                           + tile_height * int(angle > 3.14))
+                           self.rect.y - img.get_height() * math.sin(angle)
+                           + tile_height * int(angle > math.pi))
 
         return weapon_copy, coords
 
