@@ -58,8 +58,7 @@ class MySprite(pygame.sprite.Sprite):
         coords = (self.rect.centerx + img.get_width() * math.cos(angle) * int(flipped),
                   self.rect.y - img.get_height() * math.sin(angle))
         self.weapon_end = (self.rect.centerx + img.get_width() * math.cos(angle),
-                           self.rect.y - img.get_height() * math.sin(angle)
-                           + tile_height * int(angle > math.pi))
+                           self.rect.centery - img.get_width() * math.sin(angle))
 
         return weapon_copy, coords
 
